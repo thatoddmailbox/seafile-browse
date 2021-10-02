@@ -47,7 +47,11 @@ type File struct {
 }
 
 func (f *File) open(name string) (*File, error) {
-	// TODO: fix
+	// TODO: handle paths, make less jank
+	if name == "" {
+		return f, nil
+	}
+
 	for _, dirent := range f.i.Dirents {
 		if dirent.Name == name {
 			return newFile(f.seafileFsys, dirent.ID, &dirent)
