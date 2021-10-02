@@ -10,6 +10,7 @@ type Repo struct {
 	fsys fs.FS
 }
 
+// GetLatestCommit returns the most recent Commit to the Repo.
 func (r *Repo) GetLatestCommit() (*Commit, error) {
 	commitPath := path.Join("storage", "commits", r.id)
 

@@ -16,6 +16,11 @@ type Commit struct {
 	ParentID    string `json:"parent_id"`
 }
 
+// GetFS returns an FS of the Repo's state at the given Commit.
+func (c *Commit) GetFS() (*FS, error) {
+	return newFS(c)
+}
+
 func newCommit(repoID string, fsys fs.FS, f fs.File) (*Commit, error) {
 	c := Commit{
 		repoID: repoID,
