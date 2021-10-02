@@ -185,6 +185,15 @@ func newFile(seafileFsys *FS, fileID string, d *direntInternal) (*File, error) {
 		blockIdx:        0,
 	}
 
+	if d != nil && d.ID == "0000000000000000000000000000000000000000" && ((d.Mode & modeIsDir) != 0) {
+		// it's an empty directory, special case
+		// TODO: is version right?
+		ret.i.Dirents = []direntInternal{}
+		ret.i.Type = typeDir
+		ret.i.Version = 3
+		return &ret, nil
+	}
+
 	fsPath := path.Join("storage", "fs", seafileFsys.c.repoID, fileID[:2], fileID[2:])
 	f, err := seafileFsys.c.fsys.Open(fsPath)
 	if err != nil {
