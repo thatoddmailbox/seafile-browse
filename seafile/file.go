@@ -3,7 +3,7 @@ package seafile
 import (
 	"compress/zlib"
 	"encoding/json"
-	"errors"
+	"io"
 	"io/fs"
 	"path"
 )
@@ -22,7 +22,7 @@ type dirent struct {
 
 type fileInternal struct {
 	// only for files
-	BlockIDs []string `json:"block_ids`
+	BlockIDs []string `json:"block_ids"`
 
 	// only for dirs
 	Dirents []dirent `json:"dirents"`
@@ -37,6 +37,11 @@ type File struct {
 
 	i fileInternal
 	d *dirent
+
+	totalByteOffset int64
+	blockRemaining  int64
+	blockIdx        uint
+	blockFile       fs.File
 }
 
 func (f *File) open(name string) (*File, error) {
@@ -53,11 +58,62 @@ func (f *File) open(name string) (*File, error) {
 func (f *File) Stat() (fs.FileInfo, error) {
 	return &FileInfo{
 		f: f,
-	}, errors.New("not implemented")
+	}, nil
 }
 
 func (f *File) Read(b []byte) (int, error) {
-	return 0, errors.New("not implemented")
+	totalRead := 0
+	totalRequested := int64(len(b))
+	totalRemaining := f.d.Size - int64(f.totalByteOffset)
+
+	for totalRequested > 0 && totalRemaining > 0 {
+		var err error
+
+		if f.blockFile == nil {
+			blockID := f.i.BlockIDs[f.blockIdx]
+			blockPath := path.Join("storage", "blocks", f.seafileFsys.c.repoID, blockID[:2], blockID[2:])
+			f.blockFile, err = f.seafileFsys.c.fsys.Open(blockPath)
+			if err != nil {
+				return totalRead, err
+			}
+
+			blockFileInfo, err := f.blockFile.Stat()
+			if err != nil {
+				return totalRead, err
+			}
+			f.blockRemaining = blockFileInfo.Size()
+		}
+
+		n, err := f.blockFile.Read(b)
+		totalRead += n
+		if err != nil && err != io.EOF {
+			return totalRead, err
+		}
+
+		// update counters
+		f.totalByteOffset += int64(n)
+		totalRequested -= int64(n)
+		totalRemaining -= int64(n)
+		f.blockRemaining -= int64(n)
+
+		if f.blockRemaining == 0 || err == io.EOF {
+			// onto the next block
+			f.blockIdx++
+
+			err := f.blockFile.Close()
+			if err != nil {
+				return totalRead, err
+			}
+			f.blockFile = nil
+		}
+	}
+
+	var err error
+	if totalRemaining == 0 {
+		err = io.EOF
+	}
+
+	return totalRead, err
 }
 
 func (f *File) Close() error {
@@ -71,6 +127,9 @@ func newFile(seafileFsys *FS, fileID string, d *dirent) (*File, error) {
 		fileID:      fileID,
 
 		d: d,
+
+		totalByteOffset: 0,
+		blockIdx:        0,
 	}
 
 	fsPath := path.Join("storage", "fs", seafileFsys.c.repoID, fileID[:2], fileID[2:])
