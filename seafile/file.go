@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"path"
+	"strings"
 )
 
 const typeFile = 1
@@ -46,19 +47,33 @@ type File struct {
 	blockFile       fs.File
 }
 
-func (f *File) open(name string) (*File, error) {
-	// TODO: handle paths, make less jank
-	if name == "" {
-		return f, nil
-	}
-
+func (f *File) openSub(sub string) (*File, error) {
 	for _, dirent := range f.i.Dirents {
-		if dirent.Name == name {
+		if dirent.Name == sub {
 			return newFile(f.seafileFsys, dirent.ID, &dirent)
 		}
 	}
 
 	return nil, fs.ErrNotExist
+}
+
+func (f *File) open(name string) (*File, error) {
+	parts := strings.Split(name, "/")
+
+	if len(name) == 0 {
+		parts = []string{}
+	}
+
+	currentLevel := f
+	var err error
+	for _, part := range parts {
+		currentLevel, err = currentLevel.openSub(part)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return currentLevel, nil
 }
 
 func (f *File) Stat() (fs.FileInfo, error) {
