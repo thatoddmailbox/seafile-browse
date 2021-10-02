@@ -113,7 +113,7 @@ func (f *File) Read(b []byte) (int, error) {
 			f.blockRemaining = blockFileInfo.Size()
 		}
 
-		n, err := f.blockFile.Read(b)
+		n, err := f.blockFile.Read(b[totalRead:])
 		totalRead += n
 		if err != nil && err != io.EOF {
 			return totalRead, err
