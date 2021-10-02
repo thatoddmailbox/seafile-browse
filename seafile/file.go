@@ -38,6 +38,8 @@ type File struct {
 	i fileInternal
 	d *dirent
 
+	closed bool
+
 	totalByteOffset int64
 	blockRemaining  int64
 	blockIdx        uint
@@ -62,6 +64,10 @@ func (f *File) Stat() (fs.FileInfo, error) {
 }
 
 func (f *File) Read(b []byte) (int, error) {
+	if f.closed {
+		return 0, fs.ErrClosed
+	}
+
 	totalRead := 0
 	totalRequested := int64(len(b))
 	totalRemaining := f.d.Size - int64(f.totalByteOffset)
@@ -117,7 +123,17 @@ func (f *File) Read(b []byte) (int, error) {
 }
 
 func (f *File) Close() error {
-	// not really anything to do
+	f.closed = true
+
+	if f.blockFile != nil {
+		err := f.blockFile.Close()
+		if err != nil {
+			return err
+		}
+
+		f.blockFile = nil
+	}
+
 	return nil
 }
 
@@ -127,6 +143,8 @@ func newFile(seafileFsys *FS, fileID string, d *dirent) (*File, error) {
 		fileID:      fileID,
 
 		d: d,
+
+		closed: true,
 
 		totalByteOffset: 0,
 		blockIdx:        0,
