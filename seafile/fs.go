@@ -1,12 +1,14 @@
 package seafile
 
+import "io/fs"
+
 type FS struct {
 	c    *Commit
 	root *File
 }
 
 // Open opens the named file.
-func (sfsys *FS) Open(name string) (*File, error) {
+func (sfsys *FS) Open(name string) (fs.File, error) {
 	return sfsys.root.open(name)
 }
 

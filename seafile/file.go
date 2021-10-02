@@ -11,7 +11,7 @@ import (
 const typeFile = 1
 const typeDir = 3
 
-type dirent struct {
+type direntInternal struct {
 	ID       string `json:"id"`
 	Mode     uint32 `json:"mode"`
 	Modifier string `json:"modifier"`
@@ -25,7 +25,7 @@ type fileInternal struct {
 	BlockIDs []string `json:"block_ids"`
 
 	// only for dirs
-	Dirents []dirent `json:"dirents"`
+	Dirents []direntInternal `json:"dirents"`
 
 	Type    int `json:"type"`
 	Version int `json:"version"`
@@ -36,7 +36,7 @@ type File struct {
 	fileID      string
 
 	i fileInternal
-	d *dirent
+	d *direntInternal
 
 	closed bool
 
@@ -63,13 +63,17 @@ func (f *File) open(name string) (*File, error) {
 
 func (f *File) Stat() (fs.FileInfo, error) {
 	return &FileInfo{
-		f: f,
+		d: f.d,
 	}, nil
 }
 
 func (f *File) Read(b []byte) (int, error) {
 	if f.closed {
 		return 0, fs.ErrClosed
+	}
+
+	if f.i.Type != typeFile {
+		return 0, fs.ErrInvalid
 	}
 
 	totalRead := 0
@@ -126,6 +130,18 @@ func (f *File) Read(b []byte) (int, error) {
 	return totalRead, err
 }
 
+func (f *File) ReadDir(n int) ([]fs.DirEntry, error) {
+	result := []fs.DirEntry{}
+
+	for i := range f.i.Dirents {
+		result = append(result, &DirEntry{
+			d: &f.i.Dirents[i],
+		})
+	}
+
+	return result, nil
+}
+
 func (f *File) Close() error {
 	f.closed = true
 
@@ -141,7 +157,7 @@ func (f *File) Close() error {
 	return nil
 }
 
-func newFile(seafileFsys *FS, fileID string, d *dirent) (*File, error) {
+func newFile(seafileFsys *FS, fileID string, d *direntInternal) (*File, error) {
 	ret := File{
 		seafileFsys: seafileFsys,
 		fileID:      fileID,
