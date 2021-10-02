@@ -3,6 +3,7 @@ package seafile
 import (
 	"compress/zlib"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/fs"
 	"path"
@@ -88,6 +89,12 @@ func (f *File) Stat() (fs.FileInfo, error) {
 	}, nil
 }
 
+func (f *File) openBlockIdx(i uint) (fs.File, error) {
+	blockID := f.i.BlockIDs[f.blockIdx]
+	blockPath := path.Join("storage", "blocks", f.seafileFsys.c.repoID, blockID[:2], blockID[2:])
+	return f.seafileFsys.c.fsys.Open(blockPath)
+}
+
 func (f *File) Read(b []byte) (int, error) {
 	if f.closed {
 		return 0, fs.ErrClosed
@@ -105,9 +112,7 @@ func (f *File) Read(b []byte) (int, error) {
 		var err error
 
 		if f.blockFile == nil {
-			blockID := f.i.BlockIDs[f.blockIdx]
-			blockPath := path.Join("storage", "blocks", f.seafileFsys.c.repoID, blockID[:2], blockID[2:])
-			f.blockFile, err = f.seafileFsys.c.fsys.Open(blockPath)
+			f.blockFile, err = f.openBlockIdx(f.blockIdx)
 			if err != nil {
 				return totalRead, err
 			}
@@ -149,6 +154,86 @@ func (f *File) Read(b []byte) (int, error) {
 	}
 
 	return totalRead, err
+}
+
+func (f *File) Seek(offset int64, whence int) (int64, error) {
+	// TODO: this is not really efficient, ESPECIALLY for SeekCurrent/SeekEnd
+	// TODO: this can be heavily optimized
+
+	absoluteOffset := offset
+	if whence == io.SeekCurrent {
+		absoluteOffset = f.totalByteOffset + offset
+	} else if whence == io.SeekEnd {
+		absoluteOffset = f.d.Size + offset
+	}
+
+	if absoluteOffset < -1 {
+		return f.totalByteOffset, errors.New("seafile: tried to seek before start")
+	}
+	if absoluteOffset > f.d.Size {
+		absoluteOffset = f.d.Size
+	}
+
+	if f.blockFile != nil {
+		err := f.blockFile.Close()
+		if err != nil {
+			return f.totalByteOffset, err
+		}
+
+		f.blockFile = nil
+	}
+
+	f.totalByteOffset = 0
+	f.blockRemaining = 0
+	f.blockIdx = 0
+
+	var err error
+
+	for f.totalByteOffset < absoluteOffset {
+		f.blockFile, err = f.openBlockIdx(f.blockIdx)
+		if err != nil {
+			return f.totalByteOffset, err
+		}
+
+		blockFileInfo, err := f.blockFile.Stat()
+		if err != nil {
+			return f.totalByteOffset, err
+		}
+		f.blockRemaining = blockFileInfo.Size()
+
+		distanceRemaining := absoluteOffset - f.totalByteOffset
+
+		if f.blockRemaining < distanceRemaining {
+			// we need to seek to the right place in this block
+			// then get out of here
+
+			blockFileSeek, ok := f.blockFile.(io.Seeker)
+			if !ok {
+				return f.totalByteOffset, errors.New("seafile: underlying fs.File does not implement io.Seeker")
+			}
+
+			blockOffset, err := blockFileSeek.Seek(distanceRemaining, io.SeekStart)
+			if err != nil {
+				return f.totalByteOffset, err
+			}
+
+			f.blockRemaining -= blockOffset
+			break
+		}
+
+		// skip this block
+		f.totalByteOffset += f.blockRemaining
+		f.blockRemaining = 0
+		f.blockIdx++
+
+		err = f.blockFile.Close()
+		if err != nil {
+			return f.totalByteOffset, err
+		}
+		f.blockFile = nil
+	}
+
+	return f.totalByteOffset, nil
 }
 
 func (f *File) ReadDir(n int) ([]fs.DirEntry, error) {
