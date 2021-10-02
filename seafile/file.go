@@ -39,6 +39,8 @@ type File struct {
 	i fileInternal
 	d *direntInternal
 
+	direntIdx int
+
 	closed bool
 
 	totalByteOffset int64
@@ -67,6 +69,10 @@ func (f *File) open(name string) (*File, error) {
 	currentLevel := f
 	var err error
 	for _, part := range parts {
+		if part == "." {
+			continue
+		}
+
 		currentLevel, err = currentLevel.openSub(part)
 		if err != nil {
 			return nil, err
@@ -146,12 +152,24 @@ func (f *File) Read(b []byte) (int, error) {
 }
 
 func (f *File) ReadDir(n int) ([]fs.DirEntry, error) {
+	if f.i.Type != typeDir {
+		return []fs.DirEntry{}, fs.ErrInvalid
+	}
+
 	result := []fs.DirEntry{}
 
-	for i := range f.i.Dirents {
+	for i := range f.i.Dirents[f.direntIdx:] {
+		if n > 0 && i == n {
+			break
+		}
+
 		result = append(result, &DirEntry{
 			d: &f.i.Dirents[i],
 		})
+
+		if n > 0 {
+			f.direntIdx++
+		}
 	}
 
 	return result, nil
