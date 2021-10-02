@@ -144,7 +144,7 @@ func newFile(seafileFsys *FS, fileID string, d *dirent) (*File, error) {
 
 		d: d,
 
-		closed: true,
+		closed: false,
 
 		totalByteOffset: 0,
 		blockIdx:        0,
