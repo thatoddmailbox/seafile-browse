@@ -40,8 +40,7 @@ func (i *FileInfo) Mode() fs.FileMode {
 }
 
 func (i *FileInfo) ModTime() time.Time {
-	// TODO: implement
-	return time.Now()
+	return time.Unix(int64(i.d.MTime), 0)
 }
 
 func (i *FileInfo) IsDir() bool {
