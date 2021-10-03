@@ -222,6 +222,7 @@ func (f *File) Seek(offset int64, whence int) (int64, error) {
 				return f.totalByteOffset, err
 			}
 
+			f.totalByteOffset += blockOffset
 			f.blockRemaining -= blockOffset
 			break
 		}
