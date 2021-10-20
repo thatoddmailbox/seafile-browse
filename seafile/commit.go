@@ -1,6 +1,7 @@
 package seafile
 
 import (
+	"bufio"
 	"encoding/json"
 	"io/fs"
 )
@@ -28,7 +29,8 @@ func newCommit(repoID string, fsys fs.FS, f fs.File) (*Commit, error) {
 	}
 
 	defer f.Close()
-	err := json.NewDecoder(f).Decode(&c)
+
+	err := json.NewDecoder(bufio.NewReader(f)).Decode(&c)
 	if err != nil {
 		return nil, err
 	}
