@@ -294,7 +294,7 @@ func newFile(seafileFsys *FS, fileID string, d *direntInternal) (*File, error) {
 		blockIdx:        0,
 	}
 
-	if d != nil && d.ID == "0000000000000000000000000000000000000000" && ((d.Mode & modeIsDir) != 0) {
+	if fileID == "0000000000000000000000000000000000000000" || (d != nil && d.ID == "0000000000000000000000000000000000000000" && ((d.Mode & modeIsDir) != 0)) {
 		// it's an empty directory, special case
 		// TODO: is version right?
 		ret.i.Dirents = []direntInternal{}
