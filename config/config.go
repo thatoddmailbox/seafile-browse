@@ -81,6 +81,19 @@ func Load(path string) (*Config, error) {
 		return nil, err
 	}
 
+	locationTypeCount := 0
+
+	if c.Location.Local != nil {
+		locationTypeCount += 1
+	}
+	if c.Location.SFTP != nil {
+		locationTypeCount += 1
+	}
+
+	if locationTypeCount == 0 {
+		return nil, errors.New("config: no location defined")
+	}
+
 	err = c.initFS()
 	if err != nil {
 		return nil, err
