@@ -93,6 +93,9 @@ func Load(path string) (*Config, error) {
 	if locationTypeCount == 0 {
 		return nil, errors.New("config: no location defined")
 	}
+	if locationTypeCount > 1 {
+		return nil, errors.New("config: mutiple locations defined")
+	}
 
 	err = c.initFS()
 	if err != nil {
