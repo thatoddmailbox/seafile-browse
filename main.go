@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/thatoddmailbox/fsbrowse"
 	"github.com/thatoddmailbox/seafile-browse/config"
@@ -44,5 +45,7 @@ func main() {
 	}
 	log.Println(fsys)
 
-	log.Fatal(http.ListenAndServe(":9253", fsbrowse.FileServer(fsys)))
+	port := 9253
+	log.Printf("Listening on port %d...", port)
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), fsbrowse.FileServer(fsys)))
 }
