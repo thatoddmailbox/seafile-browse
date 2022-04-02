@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html"
 	"log"
 	"net/http"
 	"strconv"
@@ -51,7 +52,12 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			// repo list
-			fmt.Fprintf(w, "Repo list TODO")
+			w.Header().Set("Content-Type", "text/html")
+			fmt.Fprintf(w, "<html><head><title>seafile-browse</title><body>Select a library:<ul>")
+			for repoID, _ := range repos {
+				fmt.Fprintf(w, "<li><a href=\"%s\">%s</li>", html.EscapeString(repoID), html.EscapeString(repoID))
+			}
+			fmt.Fprintf(w, "</ul></body></html>")
 			return
 		}
 
