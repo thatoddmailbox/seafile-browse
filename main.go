@@ -55,7 +55,7 @@ func main() {
 			w.Header().Set("Content-Type", "text/html")
 			fmt.Fprintf(w, "<html><head><title>seafile-browse</title><body>Select a library:<ul>")
 			for repoID, _ := range repos {
-				fmt.Fprintf(w, "<li><a href=\"%s\">%s</li>", html.EscapeString(repoID), html.EscapeString(repoID))
+				fmt.Fprintf(w, "<li><a href=\"%s/\">%s</li>", html.EscapeString(repoID), html.EscapeString(repoID))
 			}
 			fmt.Fprintf(w, "</ul></body></html>")
 			return
