@@ -7,6 +7,7 @@ Requires Go 1.16 or newer.
 You must have the path of your repository. It can be either over SSH or local.
 
 To configure, create a `config.toml` in the same directory as `seafile-browse`.
+
 For local file access:
 ```
 [location.local]
