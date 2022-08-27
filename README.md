@@ -4,7 +4,7 @@ A command-line client to browse a [Seafile](https://seafile.com) data repository
 
 Requires Go 1.16 or newer.
 
-You must have the path of your repository. It can be either over SSH or local.
+You must have the path of your repository. It can either be a local folder or accessed remotely via SFTP.
 
 To configure, create a `config.toml` in the same directory as `seafile-browse`.
 
