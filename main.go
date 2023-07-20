@@ -63,9 +63,7 @@ func main() {
 
 		// repo contents
 		path := r.URL.Path[1:]
-		if strings.HasSuffix(path, "/") {
-			path = path[:len(path)-1]
-		}
+		path = strings.TrimSuffix(path, "/")
 
 		pathParts := strings.Split(path, "/")
 		repoID := pathParts[0]
