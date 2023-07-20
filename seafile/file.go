@@ -62,9 +62,7 @@ func (f *File) openSub(sub string) (*File, error) {
 
 func (f *File) open(name string) (*File, error) {
 	// remove trailing slash
-	if strings.HasSuffix(name, "/") {
-		name = name[:len(name)-1]
-	}
+	name = strings.TrimSuffix(name, "/")
 
 	parts := strings.Split(name, "/")
 
