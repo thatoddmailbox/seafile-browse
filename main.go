@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html"
+	"io/fs"
 	"log"
 	"net/http"
 	"strconv"
@@ -29,7 +30,7 @@ func main() {
 	}
 
 	repos := map[string]*seafile.Repo{}
-	repoLatestFSHandler := map[string]http.Handler{}
+	repoFSs := map[string]fs.FS{}
 	for _, repoID := range repoIDs {
 		repos[repoID], err = storage.OpenRepo(repoID)
 		if err != nil {
@@ -69,7 +70,7 @@ func main() {
 		repoID := pathParts[0]
 		repoPath := pathParts[1:]
 
-		repoHandler, repoExists := repoLatestFSHandler[repoID]
+		repoFS, repoExists := repoFSs[repoID]
 		if !repoExists {
 			fmt.Fprintf(w, "Repo ID invalid")
 			return
@@ -77,7 +78,7 @@ func main() {
 
 		// kinda janky, we reuse the request but rewrite its path
 		r.URL.Path = strings.Join(repoPath, "/")
-		repoHandler.ServeHTTP(w, r)
+		fsbrowse.ServeHTTPStateless(w, r, repoFS, "", "")
 	})
 
 	port := 9253
