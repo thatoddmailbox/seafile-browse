@@ -65,15 +65,15 @@ jobs:
       run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -v .
 
     - if: matrix.os == 'windows'
-      name: Upload binary
+      name: Upload binary (Windows)
       uses: actions/upload-artifact@v3
       with:
         name: seafile-browse_${{ matrix.os }}_${{ matrix.arch }}.exe
-        path: seafile-browse_${{ matrix.os }}_${{ matrix.arch }}.exe
+        path: seafile-browse.exe
 
     - if: matrix.os != 'windows'
-      name: Upload binary
+      name: Upload binary (non-Windows)
       uses: actions/upload-artifact@v3
       with:
         name: seafile-browse_${{ matrix.os }}_${{ matrix.arch }}
-        path: seafile-browse_${{ matrix.os }}_${{ matrix.arch }}
+        path: seafile-browse
