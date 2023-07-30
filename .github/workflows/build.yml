@@ -62,18 +62,10 @@ jobs:
       run: go get -v -t -d ./...
 
     - name: Build
-      run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -v .
+      run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} CGO_ENABLED=0 go build -o seafile-browse_${{ matrix.os }}_${{ matrix.arch }} -v .
 
-    - if: matrix.os == 'windows'
-      name: Upload binary (Windows)
-      uses: actions/upload-artifact@v3
-      with:
-        name: seafile-browse_${{ matrix.os }}_${{ matrix.arch }}.exe
-        path: seafile-browse.exe
-
-    - if: matrix.os != 'windows'
-      name: Upload binary (non-Windows)
+    - name: Upload binary
       uses: actions/upload-artifact@v3
       with:
         name: seafile-browse_${{ matrix.os }}_${{ matrix.arch }}
-        path: seafile-browse
+        path: seafile-browse_${{ matrix.os }}_${{ matrix.arch }}
