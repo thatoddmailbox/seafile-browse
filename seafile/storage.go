@@ -23,6 +23,13 @@ type Storage struct {
 	repoOwners       map[string]string
 }
 
+type RepoInfo struct {
+	Name    string
+	Owner   string
+	Virtual bool
+	Garbage bool
+}
+
 // ListRepoIDs returns a list of all repo IDs.
 func (s *Storage) ListRepoIDs() ([]string, error) {
 	entries, err := fs.ReadDir(s.fsys, "storage/commits")
@@ -51,6 +58,16 @@ func (s *Storage) OpenRepo(repoID string) (*Repo, error) {
 	}
 
 	return newRepo(repoID, s.fsys, s), nil
+}
+
+// GetRepoInfo gets a RepoInfo struct describing the Repo with the given ID.
+func (s *Storage) GetRepoInfo(repoID string) (RepoInfo, error) {
+	return RepoInfo{
+		Name:    s.repoNames[repoID],
+		Owner:   s.repoOwners[repoID],
+		Garbage: s.garbageRepos[repoID],
+		Virtual: s.virtualRepos[repoID],
+	}, nil
 }
 
 // ParseSQLFile reads the SQL file at the given path and uses that for optimization.
