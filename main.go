@@ -15,10 +15,6 @@ import (
 	"github.com/thatoddmailbox/seafile-browse/seafile"
 )
 
-func renderRepoList(w http.ResponseWriter, r *http.Request, snapshotName string) {
-
-}
-
 type snapshotState struct {
 	repoInfo []seafile.RepoInfo
 	repos    map[string]*seafile.Repo
