@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -37,13 +36,26 @@ func getRepoInfoForSnapshot(snapshot string, cfg *config.Config) ([]string, map[
 	f := cfg.FS()
 	if snapshot != "" {
 		var err error
-		f, err = fs.Sub(cfg.SnapshotFS(), path.Join(snapshot, cfg.Path()))
+		f, err = fs.Sub(cfg.SnapshotFS(), snapshot)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	storage := seafile.NewStorageWithFS(f)
+	path := cfg.Path()
+	if path == "" {
+		path = "."
+	}
+
+	storage := seafile.NewStorageWithFSSubpath(f, path)
+
+	if cfg.SQLFilePath() != "" {
+		err := storage.ParseSQLFile(cfg.SQLFilePath())
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	repoIDs, err := storage.ListRepoIDs()
 	if err != nil {
 		panic(err)
@@ -53,7 +65,11 @@ func getRepoInfoForSnapshot(snapshot string, cfg *config.Config) ([]string, map[
 	repoFSs := map[string]fs.FS{}
 	for _, repoID := range repoIDs {
 		repos[repoID], err = storage.OpenRepo(repoID)
-		if err != nil {
+		if err == seafile.ErrGarbageRepo {
+			continue
+		} else if err == seafile.ErrVirtualRepo {
+			continue
+		} else if err != nil {
 			panic(err)
 		}
 

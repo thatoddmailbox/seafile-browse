@@ -15,6 +15,7 @@ type Config struct {
 		Local *struct {
 			Path         string
 			SnapshotPath string
+			SQLFilePath  string
 		}
 		SFTP *struct {
 			Host         string
@@ -22,14 +23,16 @@ type Config struct {
 			Password     string
 			Path         string
 			SnapshotPath string
+			SQLFilePath  string
 		}
 	}
 
 	path string
 
-	f      fs.FS
-	sf     fs.FS
-	sftpFS *sftpfs.Client
+	f       fs.FS
+	sf      fs.FS
+	sqlPath string
+	sftpFS  *sftpfs.Client
 }
 
 func (c *Config) initFS() error {
@@ -41,6 +44,7 @@ func (c *Config) initFS() error {
 			c.sf = os.DirFS(c.Location.Local.SnapshotPath)
 		}
 		c.path = c.Location.Local.Path
+		c.sqlPath = c.Location.Local.SQLFilePath
 		return nil
 	}
 
@@ -59,15 +63,6 @@ func (c *Config) initFS() error {
 		c.f = c.sftpFS
 		c.path = c.Location.SFTP.Path
 
-		if c.Location.SFTP.Path != "" {
-			subFS, err := fs.Sub(c.sftpFS, c.Location.SFTP.Path)
-			if err != nil {
-				return err
-			}
-
-			c.f = subFS
-		}
-
 		if c.Location.SFTP.SnapshotPath != "" {
 			subFS, err := fs.Sub(c.sftpFS, c.Location.SFTP.SnapshotPath)
 			if err != nil {
@@ -76,6 +71,8 @@ func (c *Config) initFS() error {
 
 			c.sf = subFS
 		}
+
+		c.sqlPath = c.Location.SFTP.SQLFilePath
 
 		return nil
 	}
@@ -99,6 +96,10 @@ func (c *Config) FS() fs.FS {
 
 func (c *Config) SnapshotFS() fs.FS {
 	return c.sf
+}
+
+func (c *Config) SQLFilePath() string {
+	return c.sqlPath
 }
 
 func (c *Config) HaveSnapshots() bool {
