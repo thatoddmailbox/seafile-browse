@@ -1,5 +1,9 @@
 github.com/BurntSushi/toml v1.0.0 h1:dtDWrepsVPfW9H/4y7dDgFc2MBUSeJhlaDtK13CxFlU=
 github.com/BurntSushi/toml v1.0.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
+github.com/thatoddmailbox/fsbrowse v0.1.0 h1:5pr2OdnhAeK2Xj/QauFBTUSAiQ5ysTUqPO0eBWn7bPQ=
+github.com/thatoddmailbox/fsbrowse v0.1.0/go.mod h1:fjNb06j0fTQXrBD6xE3SJhQ0dKSRKWHO8S6ZkI+6pm8=
+github.com/thatoddmailbox/sftpfs v0.1.0 h1:P31S7mh+T47ntGTb5CH9osNF+cNrjGggFWl3IPAeAkE=
+github.com/thatoddmailbox/sftpfs v0.1.0/go.mod h1:A06OBRN/jra5EYLnX8r1n0rHLKiVwcImcJs8MTp0kNA=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
