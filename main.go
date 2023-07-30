@@ -139,20 +139,20 @@ func main() {
 				notice = "You are viewing snapshot <code>" + html.EscapeString(activeSnapshot) + "</code>."
 			}
 
-			notice += " <a href=\"snapshots/\">View snapshots</a><br><br>"
+			notice += " <a href=\"/snapshots/\">View snapshots</a>"
 		}
 
-		_, repos, repoFSs := getRepoInfoForSnapshot(activeSnapshot, cfg)
+		repoIDs, _, repoFSs := getRepoInfoForSnapshot(activeSnapshot, cfg)
 
 		if len(pathParts) == 0 || path == "" {
 			// repo list
 			w.Header().Set("Content-Type", "text/html")
 			fmt.Fprintf(w, "<html><head><title>seafile-browse</title><body>")
 			if cfg.HaveSnapshots() {
-				fmt.Fprint(w, notice)
+				fmt.Fprint(w, notice+"<br><br>")
 			}
 			fmt.Fprintf(w, "Select a library:<ul>")
-			for repoID, _ := range repos {
+			for _, repoID := range repoIDs {
 				fmt.Fprintf(w, "<li><a href=\"%s/\">%s</li>", html.EscapeString(repoID), html.EscapeString(repoID))
 			}
 			fmt.Fprintf(w, "</ul></body></html>")
