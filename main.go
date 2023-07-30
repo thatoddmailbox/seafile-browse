@@ -65,6 +65,12 @@ func getStateForSnapshot(snapshot string, cfg *config.Config) ([]seafile.RepoInf
 	repoFSs := map[string]fs.FS{}
 	repoInfo := []seafile.RepoInfo{}
 	for _, repoID := range repoIDs {
+		inf, err := storage.GetRepoInfo(repoID)
+		if err != nil {
+			panic(err)
+		}
+		repoInfo = append(repoInfo, inf)
+
 		repos[repoID], err = storage.OpenRepo(repoID)
 		if err == seafile.ErrGarbageRepo {
 			continue
@@ -73,12 +79,6 @@ func getStateForSnapshot(snapshot string, cfg *config.Config) ([]seafile.RepoInf
 		} else if err != nil {
 			panic(err)
 		}
-
-		inf, err := storage.GetRepoInfo(repoID)
-		if err != nil {
-			panic(err)
-		}
-		repoInfo = append(repoInfo, inf)
 
 		commit, err := repos[repoID].GetLatestCommit()
 		if err != nil {
@@ -170,12 +170,27 @@ func main() {
 			}
 			fmt.Fprintf(w, "Select a library:<ul>")
 			for _, singleRepoInfo := range repoInfo {
+				notOpenable := false
+
 				suffix := ""
 				if singleRepoInfo.Virtual {
 					suffix += " (virtual)"
+					notOpenable = true
 				}
 				if singleRepoInfo.Garbage {
 					suffix += " (garbage)"
+					notOpenable = true
+				}
+
+				if notOpenable {
+					fmt.Fprintf(
+						w,
+						"<li>%s (%s)%s</li>",
+						html.EscapeString(singleRepoInfo.Name),
+						html.EscapeString(singleRepoInfo.Owner),
+						suffix,
+					)
+					continue
 				}
 
 				fmt.Fprintf(
