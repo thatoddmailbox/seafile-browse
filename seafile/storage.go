@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"io/fs"
-	"log"
 	"strings"
 )
 
@@ -24,6 +23,7 @@ type Storage struct {
 }
 
 type RepoInfo struct {
+	ID      string
 	Name    string
 	Owner   string
 	Virtual bool
@@ -63,6 +63,7 @@ func (s *Storage) OpenRepo(repoID string) (*Repo, error) {
 // GetRepoInfo gets a RepoInfo struct describing the Repo with the given ID.
 func (s *Storage) GetRepoInfo(repoID string) (RepoInfo, error) {
 	return RepoInfo{
+		ID:      repoID,
 		Name:    s.repoNames[repoID],
 		Owner:   s.repoOwners[repoID],
 		Garbage: s.garbageRepos[repoID],
@@ -128,7 +129,6 @@ func (s *Storage) ParseSQLFile(sqlPath string) error {
 				repoID := strings.Trim(valueParts[1], "'")
 				repoName := strings.Trim(valueParts[2], "')")
 
-				log.Println(repoID, repoName)
 				s.repoNames[repoID] = repoName
 			}
 		} else if strings.HasPrefix(line, "INSERT INTO `RepoOwner` VALUES ") {
@@ -143,7 +143,6 @@ func (s *Storage) ParseSQLFile(sqlPath string) error {
 				repoID := strings.Trim(valueParts[1], "'")
 				repoOwner := strings.Trim(valueParts[2], "')")
 
-				log.Println(repoID, repoOwner)
 				s.repoOwners[repoID] = repoOwner
 			}
 		} else if strings.HasPrefix(line, "INSERT INTO `VirtualRepo` VALUES ") {

@@ -2,7 +2,6 @@ package seafile
 
 import (
 	"io/fs"
-	"log"
 	"path"
 )
 
@@ -18,7 +17,6 @@ func (r *Repo) GetLatestCommit() (*Commit, error) {
 
 	if r.s.haveOptimization {
 		lastCommit := r.s.latestCommits[r.id]
-		log.Println("ok", r.id, lastCommit)
 
 		if lastCommit != "" {
 			path := lastCommit[:2] + "/" + lastCommit[2:]

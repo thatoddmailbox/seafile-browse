@@ -19,18 +19,18 @@ func renderRepoList(w http.ResponseWriter, r *http.Request, snapshotName string)
 
 }
 
-type repoInfo struct {
-	repoIDs []string
-	repos   map[string]*seafile.Repo
-	repoFSs map[string]fs.FS
+type snapshotState struct {
+	repoInfo []seafile.RepoInfo
+	repos    map[string]*seafile.Repo
+	repoFSs  map[string]fs.FS
 }
 
-var allRepoInfo map[string]repoInfo = map[string]repoInfo{}
+var allStates map[string]snapshotState = map[string]snapshotState{}
 
-func getRepoInfoForSnapshot(snapshot string, cfg *config.Config) ([]string, map[string]*seafile.Repo, map[string]fs.FS) {
-	ri, exists := allRepoInfo[snapshot]
+func getStateForSnapshot(snapshot string, cfg *config.Config) ([]seafile.RepoInfo, map[string]*seafile.Repo, map[string]fs.FS) {
+	state, exists := allStates[snapshot]
 	if exists {
-		return ri.repoIDs, ri.repos, ri.repoFSs
+		return state.repoInfo, state.repos, state.repoFSs
 	}
 
 	f := cfg.FS()
@@ -63,6 +63,7 @@ func getRepoInfoForSnapshot(snapshot string, cfg *config.Config) ([]string, map[
 
 	repos := map[string]*seafile.Repo{}
 	repoFSs := map[string]fs.FS{}
+	repoInfo := []seafile.RepoInfo{}
 	for _, repoID := range repoIDs {
 		repos[repoID], err = storage.OpenRepo(repoID)
 		if err == seafile.ErrGarbageRepo {
@@ -72,6 +73,12 @@ func getRepoInfoForSnapshot(snapshot string, cfg *config.Config) ([]string, map[
 		} else if err != nil {
 			panic(err)
 		}
+
+		inf, err := storage.GetRepoInfo(repoID)
+		if err != nil {
+			panic(err)
+		}
+		repoInfo = append(repoInfo, inf)
 
 		commit, err := repos[repoID].GetLatestCommit()
 		if err != nil {
@@ -86,9 +93,19 @@ func getRepoInfoForSnapshot(snapshot string, cfg *config.Config) ([]string, map[
 		repoFSs[repoID] = latestFS
 	}
 
-	allRepoInfo[snapshot] = repoInfo{repoIDs, repos, repoFSs}
+	sort.Strings(repoIDs)
 
-	return repoIDs, repos, repoFSs
+	sort.Slice(repoInfo, func(i, j int) bool {
+		if repoInfo[i].Name == repoInfo[j].Name {
+			return repoInfo[i].Owner < repoInfo[j].Owner
+		}
+
+		return repoInfo[i].Name < repoInfo[j].Name
+	})
+
+	allStates[snapshot] = snapshotState{repoInfo, repos, repoFSs}
+
+	return repoInfo, repos, repoFSs
 }
 
 func main() {
@@ -142,7 +159,7 @@ func main() {
 			notice += " <a href=\"/snapshots/\">View snapshots</a>"
 		}
 
-		repoIDs, _, repoFSs := getRepoInfoForSnapshot(activeSnapshot, cfg)
+		repoInfo, _, repoFSs := getStateForSnapshot(activeSnapshot, cfg)
 
 		if len(pathParts) == 0 || path == "" {
 			// repo list
@@ -152,8 +169,23 @@ func main() {
 				fmt.Fprint(w, notice+"<br><br>")
 			}
 			fmt.Fprintf(w, "Select a library:<ul>")
-			for _, repoID := range repoIDs {
-				fmt.Fprintf(w, "<li><a href=\"%s/\">%s</li>", html.EscapeString(repoID), html.EscapeString(repoID))
+			for _, singleRepoInfo := range repoInfo {
+				suffix := ""
+				if singleRepoInfo.Virtual {
+					suffix += " (virtual)"
+				}
+				if singleRepoInfo.Garbage {
+					suffix += " (garbage)"
+				}
+
+				fmt.Fprintf(
+					w,
+					"<li><a href=\"%s/\">%s (%s)%s</li>",
+					html.EscapeString(singleRepoInfo.ID),
+					html.EscapeString(singleRepoInfo.Name),
+					html.EscapeString(singleRepoInfo.Owner),
+					suffix,
+				)
 			}
 			fmt.Fprintf(w, "</ul></body></html>")
 			return
