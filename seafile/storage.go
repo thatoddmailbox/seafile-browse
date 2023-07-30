@@ -50,7 +50,7 @@ func (s *Storage) ListRepoIDs() ([]string, error) {
 func (s *Storage) OpenRepo(repoID string) (*Repo, error) {
 	_, garbage := s.garbageRepos[repoID]
 	if garbage {
-		return nil, ErrVirtualRepo
+		return nil, ErrGarbageRepo
 	}
 	_, virtual := s.virtualRepos[repoID]
 	if virtual {
