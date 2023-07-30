@@ -180,7 +180,7 @@ func main() {
 
 				fmt.Fprintf(
 					w,
-					"<li><a href=\"%s/\">%s (%s)%s</li>",
+					"<li><a href=\"%s/\">%s (%s)%s</a></li>",
 					html.EscapeString(singleRepoInfo.ID),
 					html.EscapeString(singleRepoInfo.Name),
 					html.EscapeString(singleRepoInfo.Owner),
@@ -203,7 +203,7 @@ func main() {
 			fmt.Fprintf(w, "<a href=\"/\">View latest data</a><br><br>")
 			fmt.Fprintf(w, "Or, select a snapshot:<ul>")
 			for _, snapshot := range snapshots {
-				fmt.Fprintf(w, "<li><a href=\"/snapshot:%s/\">%s</li>", html.EscapeString(snapshot), html.EscapeString(snapshot))
+				fmt.Fprintf(w, "<li><a href=\"/snapshot:%s/\">%s</a></li>", html.EscapeString(snapshot), html.EscapeString(snapshot))
 			}
 			fmt.Fprintf(w, "</ul></body></html>")
 			return
